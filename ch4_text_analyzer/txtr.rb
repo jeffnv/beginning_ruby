@@ -58,4 +58,44 @@ class Txtr
   end
 end
 
-t = Txtr.new("oliver.txt").analyze
+class AdvTxtr < Txtr
+  STOP_WORDS_FILE = "stop_words.txt"
+  
+  def load_stop_words
+    @stop_words = []
+    if(File.exists?(STOP_WORDS_FILE))
+      @stop_words = File.read(STOP_WORDS_FILE).split(',')
+    end
+  end
+  
+  def initialize(file)
+    super
+    load_stop_words
+  end
+  
+  def count_interesting_words
+    self.to_s.split.select{|i| !@stop_words.include?(i)}.count
+  end
+  
+  def interesting_words_percentage
+    count_interesting_words.to_f / count_words.to_f
+  end
+  
+  def analyze
+    super
+    puts "text is #{(interesting_words_percentage * 100.to_f).round(2)}% interesting words."
+  end
+  
+  def summarize
+    sorted_sentences = self.to_s.gsub(/\s+/, ' ').strip.split(/\.|\?|!/).sort_by{|sentence| sentence.length}
+    ideal_sentences =  sorted_sentences.slice(sorted_sentences.length / 3, (sorted_sentences.length / 3) + 1)
+    ideal_sentences = ideal_sentences.select{|sentence| sentence =~ /is|are/}
+    puts ideal_sentences.join('. ')
+  end
+end
+
+file = ARGV[0] || "oliver.txt"
+
+t = AdvTxtr.new(file)
+t.analyze
+t.summarize
